@@ -20,7 +20,7 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(gpus[0], True)
 
 lr = 0.001
-batch_size = 3                ## refers to mini-batch Gradient Descent
+batch_size = 100                ## refers to mini-batch Gradient Descent
 epoch = 80                       ## 80
 image_width = image_height = 64
 image_channels = 1
@@ -167,17 +167,17 @@ def D3Net():
 
     model = tf.keras.models.Sequential()
 
-    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu', input_shape=(90,64,64,1)))
-    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu'))
+    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu', padding="same", input_shape=(90,64,64,1)))
+    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu', padding="same"))
     model.add(tf.keras.layers.MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2)))
 
-    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu'))
-    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu'))
+    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu', padding="same"))
+    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu', padding="same"))
     model.add(tf.keras.layers.MaxPooling3D(pool_size=(2, 2, 2), strides=(2,2,2)))
 
-    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu'))
-    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu'))
-    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu'))
+    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu', padding="same"))
+    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu', padding="same"))
+    model.add(tf.keras.layers.Conv3D(128, (3,3,3), activation='relu', padding="same"))
 
     model.add(layers.GlobalMaxPool3D())
 
@@ -192,10 +192,20 @@ def D3Net():
 
 print('Cross validation and fit...')
 
+acc_per_fold = []
+loss_per_fold = []
+
+inputs = np.concatenate((X_train, X_test), axis=0)
+targets = np.concatenate((y_train, y_test), axis=0)
+
+kfold = KFold(n_splits=10, shuffle=True)
+
+fold_no = 1
+
 #model = Net()
 #model = ConvLSTMModel_Test()
-model = D3Net()
 
+model = D3Net()
 opt = keras.optimizers.SGD(lr=lr)
 model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=["accuracy"])
 
@@ -231,4 +241,36 @@ plt.xlabel('Number of Epoch')
 plt.show()
 plt.savefig('accuracy_convlstm.eps', dpi=600, format='eps')
 plt.close()
+
+
+for train, test in kfold.split(inputs, targets):
+    print('Training for fold {}'.format(fold_no))
+    print(inputs[train].shape)
+    print(targets[train].shape)
+
+    history = model.fit(inputs[train], targets[train], batch_size = batch_size, epochs = epoch, verbose=verbosity)
+    model.summary()
+
+    scores = model.evaluate(inputs[test], targets[test], verbose=1)
+    print(f'Scores for fold {fold_no}: {model.metrics_names[0]} of {scores[0]}; {model.metrics_names[1]} of {scores[1]*100}%')
+    acc_per_fold.append(scores[1]*100)
+    loss_per_fold.append(scores[0])
+
+    fold_no = fold_no + 1
+
+print('Score per fold')
+
+for i in range(0, len(acc_per_fold)):
+    print(f'Fold {i+1} - Loss: {loss_per_fold[i]} - Accuracy: {acc_per_fold[i]}%')
+
+print('Average scores for all folds')
+print(f'Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold})')
+print(f'Loss: {np.means(loss_per_fold)}'
+
+
+
+
+
+
+
 
