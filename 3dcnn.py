@@ -7,7 +7,7 @@ import tensorflow as tf
 from tensorflow.keras.losses import sparse_categorical_crossentropy
 from tensorflow.keras import layers
 from tensorflow import keras
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard, EarlyStopping
 
 import matplotlib.pyplot as plt
 
@@ -20,8 +20,8 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(gpus[0], True)
 
 lr = 0.001
-batch_size = 100                ## refers to mini-batch Gradient Descent
-epoch = 80                       ## 80
+batch_size = 8                ## refers to mini-batch Gradient Descent
+epoch = 20                       ## 80
 image_width = image_height = 64
 image_channels = 1
 kernel_size = 3
@@ -115,8 +115,8 @@ print(X_test.shape)
 print(y_train.shape)
 print(y_test.shape)
 #
-X_train = X_train.astype('float16')
-X_test = X_test.astype('float16')
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
 
 acc_per_fold = []
 loss_per_fold = []
@@ -211,10 +211,10 @@ model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=["accuracy
 
 earlystop = EarlyStopping(patience=20)
 
-filepath = "save-model-D3Net-{epoch:02d}-{val_accuracy:.2f}.hdf5"
-checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='ax')
+filepath = "save-model-D3Net-{epoch:02d}-{val_acc:.2f}.hdf5"
+checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='ax')
 
-history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epoch, verbose=verbosity, validation_split=0.2, callbacks=[earlystop, checkpoint])
+history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epoch, verbose=1, validation_split=0.2, callbacks=[earlystop, checkpoint])
 #history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epoch, verbose=verbosity, validation_split=0.2)
 
 y_pred = model.predict(X_test)
@@ -234,7 +234,7 @@ plt.xlabel('Number of Epoch')
 plt.show()
 plt.savefig('loss_convlstm.eps', dpi=600, format='eps')
 
-plt.plot(history.history(['val_accuracy']))
+plt.plot(history.history(['val_acc']))
 plt.title('Validation accuracy history')
 plt.ylabel('Accuracy value (percentage)')
 plt.xlabel('Number of Epoch')
@@ -262,10 +262,11 @@ print('Score per fold')
 
 for i in range(0, len(acc_per_fold)):
     print(f'Fold {i+1} - Loss: {loss_per_fold[i]} - Accuracy: {acc_per_fold[i]}%')
+    pass
 
 print('Average scores for all folds')
-print(f'Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold})')
-print(f'Loss: {np.means(loss_per_fold)}'
+print(f'Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold)})')
+print(f'Loss: {np.means(loss_per_fold)}')
 
 
 
