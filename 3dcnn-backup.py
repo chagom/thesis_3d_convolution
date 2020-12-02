@@ -40,7 +40,7 @@ num_folds = 4
 test_size = 0.2
 input_shape = (None, 90, image_width, image_height, 1)
 
-data_region_path = './lefteye'
+data_region_path = '../lefteye'
 
 classes = ["1", "2", "3"]
 
@@ -264,8 +264,8 @@ for i in range(0, len(acc_per_fold)):
     print(f'Fold {i+1} - Loss: {loss_per_fold[i]} - Accuracy: {acc_per_fold[i]}%')
 
 print('Average scores for all folds')
-print(f'Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold})')
-print(f'Loss: {np.means(loss_per_fold)}'
+print(f'Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold)}')
+print(f'Loss: {np.means(loss_per_fold)}')
 
 
 

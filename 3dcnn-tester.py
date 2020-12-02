@@ -19,12 +19,16 @@ gpus = tf.config.experimental.list_physical_devices('GPU')
 #tf.config.experimental.set_virtual_device_configuration(gpus[0], [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=7000)])
 tf.config.experimental.set_memory_growth(gpus[0], True)
 
-data_region_path = '/home/ge/career/data/lefteye'
+data_region_path = '../lefteye'
+model_path = 'save-model-D3Net-19-0.39.hdf5'
 
 classes = ["1", "2", "3"]
 test_size = 0.2
 num_folds = 10
 input_shape = (None, 90, 64, 64, 1)
+batch_size= 8
+lr= 0.001
+verbosity = 1
 
 window_size = 90
 X = []
@@ -77,6 +81,9 @@ X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=test_size, s
 X_train = X_train.reshape(X_train.shape[0], 90, 64, 64, 1)
 X_test = X_test.reshape(X_test.shape[0], 90, 64, 64, 1)
 
+#y_test = y_test.reshape(y_test.shape[0], 90, 64, 64, 1)
+
+
 
 print(X_train.shape)
 print(X_test.shape)
@@ -85,6 +92,9 @@ print(y_test.shape)
 #
 X_train = X_train.astype('float32')
 X_test = X_test.astype('float32')
+
+y_train = y_train.astype('float32')
+y_test = y_test.astype('float32')
 
 acc_per_fold = []
 loss_per_fold = []
@@ -137,9 +147,9 @@ def D3Net():
 
 model = D3Net()
 #model = keras.models.load_model('/home/ge/career/models/save-model-D3Net-19-0.39.hdf5')
-model.load_weights('/home/ge/career/models/save-model-D3Net-19-0.39.hdf5')
-#opt = keras.optimizers.SGD(lr=lr)
-#model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=["accuracy"])
+model.load_weights(model_path)
+opt = keras.optimizers.SGD(lr=lr)
+model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=["accuracy"])
 
 #earlystop = EarlyStopping(patience=20)
 
@@ -149,38 +159,21 @@ model.load_weights('/home/ge/career/models/save-model-D3Net-19-0.39.hdf5')
 #history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epoch, verbose=verbosity, validation_split=0.2, callbacks=[earlystop, checkpoint])
 #history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epoch, verbose=verbosity, validation_split=0.2)
 
-y_pred = model.predict(X_test)
+y_pred = model.predict(X_test, batch_size=batch_size)
 
-y_pred = np.argmax(y_pred, axis=1)
-y_test = np.argmax(y_test, axis=1)
+#y_pred = np.argmax(y_pred, axis=1)
+#y_test = np.argmax(y_test, axis=1)
 
-print(classification_report(y_test, y_pred))
+#print(classification_report(y_test, y_pred))
 
-score = model.evaluate(y_test, target_test, verbose=1)
-
-plt.plot(history.history['val_loss'])
-plt.title('Validation loss history')
-plt.ylabel('Loss value')
-plt.xlabel('Number of Epoch')
-
-plt.show()
-plt.savefig('loss_convlstm.eps', dpi=600, format='eps')
-
-plt.plot(history.history(['val_accuracy']))
-plt.title('Validation accuracy history')
-plt.ylabel('Accuracy value (percentage)')
-plt.xlabel('Number of Epoch')
-plt.show()
-plt.savefig('accuracy_convlstm.eps', dpi=600, format='eps')
-plt.close()
-
+#score = model.evaluate(X_test, y_test, verbose=1)
 
 for train, test in kfold.split(inputs, targets):
     print('Training for fold {}'.format(fold_no))
     print(inputs[train].shape)
     print(targets[train].shape)
 
-    history = model.fit(inputs[train], targets[train], batch_size = batch_size, epochs = epoch, verbose=verbosity)
+    history = model.fit(inputs[train], targets[train], batch_size = batch_size, epochs = 25, verbose=verbosity)
     model.summary()
 
     scores = model.evaluate(inputs[test], targets[test], verbose=1)
@@ -199,6 +192,22 @@ print('Average scores for all folds')
 print(f'Accuracy: {np.mean(acc_per_fold)} (+- {np.std(acc_per_fold)}')
 print(f'Loss: {np.means(loss_per_fold)}')
 
+
+plt.plot(history.history['val_loss'])
+plt.title('Validation loss history')
+plt.ylabel('Loss value')
+plt.xlabel('Number of Epoch')
+
+plt.show()
+plt.savefig('loss_convlstm.eps', dpi=600, format='eps')
+
+plt.plot(history.history(['val_accuracy']))
+plt.title('Validation accuracy history')
+plt.ylabel('Accuracy value (percentage)')
+plt.xlabel('Number of Epoch')
+plt.show()
+plt.savefig('accuracy_convlstm.eps', dpi=600, format='eps')
+plt.close()
 
 
 
